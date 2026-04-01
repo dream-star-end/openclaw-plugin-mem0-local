@@ -1,0 +1,63 @@
+{
+  "name": "openclaw-plugin-mem0-local",
+  "version": "0.1.0",
+  "description": "OpenClaw memory plugin: long-term memory via local mem0 server with DeepSeek LLM + DashScope embedding.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  },
+  "openclaw": {
+    "plugin": true,
+    "kind": "memory",
+    "entry": "./dist/index.js",
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nicepkg/openclaw-plugin-mem0-local.git"
+  },
+  "author": "OpenClaw Contributors",
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "memory",
+    "mem0",
+    "vector-store",
+    "chromadb",
+    "deepseek"
+  ],
+  "bugs": {
+    "url": "https://github.com/nicepkg/openclaw-plugin-mem0-local/issues"
+  },
+  "homepage": "https://github.com/nicepkg/openclaw-plugin-mem0-local#readme"
+}

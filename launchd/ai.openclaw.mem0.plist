@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>ai.openclaw.mem0</string>
+
+    <key>Comment</key>
+    <string>OpenClaw local mem0 memory server</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <key>ProgramArguments</key>
+    <array>
+      <string>$HOME/.openclaw/mem0-local/venv/bin/python3</string>
+      <string>$HOME/.openclaw/mem0-local/mem0_server.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>$HOME/.openclaw/mem0-local</string>
+
+    <key>StandardOutPath</key>
+    <string>$HOME/.openclaw/logs/mem0.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/.openclaw/logs/mem0.err.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>HOME</key>
+      <string>$HOME</string>
+      <key>MEM0_LLM_API_KEY</key>
+      <string>YOUR_DEEPSEEK_API_KEY</string>
+      <key>MEM0_EMBEDDER_API_KEY</key>
+      <string>YOUR_DASHSCOPE_API_KEY</string>
+    </dict>
+  </dict>
+</plist>

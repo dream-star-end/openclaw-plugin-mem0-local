@@ -1,0 +1,50 @@
+{
+  "id": "memory-mem0-local",
+  "kind": "memory",
+  "uiHints": {
+    "endpoint": {
+      "label": "mem0 Server URL",
+      "placeholder": "http://127.0.0.1:8300",
+      "help": "Local mem0 server endpoint"
+    },
+    "autoCapture": {
+      "label": "Auto-Capture",
+      "help": "Automatically store important information from conversations"
+    },
+    "autoRecall": {
+      "label": "Auto-Recall",
+      "help": "Automatically inject relevant memories into context"
+    },
+    "scoreThreshold": {
+      "label": "Score Threshold",
+      "help": "Score filter threshold (lower = more relevant, default 0.85)"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "endpoint": {
+        "type": "string",
+        "default": "http://127.0.0.1:8300",
+        "description": "Local mem0 server URL"
+      },
+      "autoCapture": {
+        "type": "boolean",
+        "default": true,
+        "description": "Auto-capture memories from conversations"
+      },
+      "autoRecall": {
+        "type": "boolean",
+        "default": true,
+        "description": "Auto-recall memories before each turn"
+      },
+      "scoreThreshold": {
+        "type": "number",
+        "default": 1.5,
+        "description": "Score filter threshold for search results"
+      }
+    },
+    "required": []
+  }
+}
