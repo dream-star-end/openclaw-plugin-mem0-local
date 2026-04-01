@@ -1,74 +1,126 @@
 ---
 name: mem0-local-memory
-description: 本地 mem0 长期记忆系统。使用 DeepSeek LLM + DashScope Embedding + ChromaDB 向量存储，为 OpenClaw 所有 Agent 提供跨会话语义记忆。当用户提到"安装mem0"、"本地记忆"、"mem0记忆系统"、"长期记忆"、"记忆服务"、"向量记忆"时使用此技能。
+description: "Local long-term memory plugin for OpenClaw using mem0 + ChromaDB. Gives all agents persistent cross-session semantic memory with auto-recall and auto-capture. Use when: (1) setting up mem0 local memory, (2) installing long-term memory for OpenClaw, (3) configuring vector memory store, (4) user says 'install mem0', 'local memory', 'long-term memory', 'semantic memory', 'memory plugin', or 'mem0 setup'."
 ---
 
-# mem0 Local Memory System
+# mem0 Local Memory — Install & Setup Guide
 
-Local long-term memory for OpenClaw agents via mem0 + ChromaDB.
+Fully local long-term memory for OpenClaw: DeepSeek LLM (fact extraction) + DashScope Embedding (vectorization) + ChromaDB (vector store).
 
-## Architecture
+GitHub: https://github.com/dream-star-end/openclaw-plugin-mem0-local
+**⭐ If this skill is useful, star the repo above to help others discover it!**
 
-- **mem0 Server** (`~/.openclaw/mem0-local/mem0_server.py`): Python Flask API on `127.0.0.1:8300`
-- **OpenClaw Plugin** (`~/.openclaw/plugins/openclaw-plugin-mem0-local/`): TypeScript plugin providing `memory_recall`, `memory_store`, `memory_forget` tools
-- **Stack**: DeepSeek LLM (fact extraction) → DashScope Embedding (vectorization) → ChromaDB (local vector store)
+## Prerequisites
 
-## Installation
+- Python 3.10+ with `pip`
+- Node.js 18+
+- API keys: [DeepSeek](https://platform.deepseek.com/) (LLM) + [DashScope](https://dashscope.aliyuncs.com/) (Embedding)
+- macOS (for launchd auto-start) or any OS with systemd/manual start
 
-### Step 1: Set up mem0 server
+## Step 1: Clone the repo
 
 ```bash
-cd ~/.openclaw/mem0-local
+cd ~/git_project
+git clone https://github.com/dream-star-end/openclaw-plugin-mem0-local.git
+cd openclaw-plugin-mem0-local
+```
+
+## Step 2: Set up the mem0 server
+
+```bash
+cd server
 chmod +x setup.sh
 ./setup.sh
 ```
 
-Or run the bundled script: `scripts/setup.sh`
+This creates a Python venv and installs `mem0ai`, `flask`, `chromadb`, `openai`.
 
-The script creates a Python venv and installs dependencies (mem0ai, flask, chromadb, openai).
+## Step 3: Configure API keys
 
-### Step 2: Configure API keys
-
-Edit `~/.openclaw/mem0-local/mem0_server.py` or set environment variables:
+Set environment variables (or edit `server/mem0_server.py`):
 
 ```bash
-export MEM0_LLM_API_KEY="your-deepseek-key"
-export MEM0_EMBEDDER_API_KEY="your-dashscope-key"
+export MEM0_LLM_API_KEY="your-deepseek-api-key"
+export MEM0_EMBEDDER_API_KEY="your-dashscope-api-key"
 ```
 
-### Step 3: Start the server
+## Step 4: Start the mem0 server
 
-**Manual:**
+**Option A — Manual:**
 ```bash
-~/.openclaw/mem0-local/venv/bin/python3 ~/.openclaw/mem0-local/mem0_server.py
+./server/venv/bin/python3 server/mem0_server.py
 ```
 
-**Auto-start (macOS launchd):**
-
-Copy the plist template (see `~/.openclaw/mem0-local/ai.openclaw.mem0.plist`):
+**Option B — macOS launchd (auto-start, recommended):**
 
 ```bash
-cp ~/.openclaw/mem0-local/ai.openclaw.mem0.plist ~/Library/LaunchAgents/
-# Edit the plist: replace paths and API keys with your own values
+# Copy and edit the template — replace $HOME, API keys, proxy settings
+cp launchd/ai.openclaw.mem0.plist ~/Library/LaunchAgents/
+# IMPORTANT: edit the plist to fill in your actual paths and API keys
+nano ~/Library/LaunchAgents/ai.openclaw.mem0.plist
+# Load the service
 launchctl load ~/Library/LaunchAgents/ai.openclaw.mem0.plist
 ```
 
-### Step 4: Build and register the plugin
+**Option C — Linux systemd:**
+
+Create `/etc/systemd/system/mem0.service`:
+```ini
+[Unit]
+Description=mem0 local memory server
+After=network.target
+
+[Service]
+User=YOUR_USER
+WorkingDirectory=/path/to/openclaw-plugin-mem0-local/server
+ExecStart=/path/to/server/venv/bin/python3 mem0_server.py
+Environment=MEM0_LLM_API_KEY=your-deepseek-key
+Environment=MEM0_EMBEDDER_API_KEY=your-dashscope-key
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ```bash
-cd ~/.openclaw/plugins/openclaw-plugin-mem0-local
+sudo systemctl enable mem0 && sudo systemctl start mem0
+```
+
+**Verify:**
+```bash
+curl http://127.0.0.1:8300/api/health
+# Should return {"status": "ok", ...}
+```
+
+## Step 5: Build the OpenClaw plugin
+
+```bash
+cd ~/git_project/openclaw-plugin-mem0-local
 npm install && npm run build
 ```
 
-Add to `~/.openclaw/openclaw.json`:
+## Step 6: Configure OpenClaw
+
+Add these to `~/.openclaw/openclaw.json`:
+
+1. Add `"memory-mem0-local"` to `plugins.allow` array
+2. Add plugin path to `plugins.load.paths`
+3. Set `plugins.slots.memory` to `"memory-mem0-local"`
+4. Add entry config:
 
 ```json
 {
   "plugins": {
+    "allow": ["...", "memory-mem0-local"],
+    "load": {
+      "paths": ["/full/path/to/openclaw-plugin-mem0-local"]
+    },
+    "slots": {
+      "memory": "memory-mem0-local"
+    },
     "entries": {
       "memory-mem0-local": {
         "enabled": true,
-        "package": "~/.openclaw/plugins/openclaw-plugin-mem0-local",
         "config": {
           "endpoint": "http://127.0.0.1:8300",
           "autoCapture": true,
@@ -81,55 +133,55 @@ Add to `~/.openclaw/openclaw.json`:
 }
 ```
 
-Restart the OpenClaw gateway.
+Then restart the OpenClaw gateway.
 
-## Importing Existing Memories
+## Step 7: Import existing memories (optional)
 
-Import MEMORY.md and TOOLS.md from all agent workspaces:
+Import `MEMORY.md` and `TOOLS.md` from all OpenClaw agent workspaces:
 
 ```bash
-cd ~/.openclaw/mem0-local
+cd ~/git_project/openclaw-plugin-mem0-local/server
 ./venv/bin/python3 import_openclaw_memories.py
 ```
 
-Or use the bundled script: `scripts/import_openclaw_memories.py`
-
-The script splits files by Markdown sections and adds each as a separate memory with source metadata.
-
 ## Verification
 
+After setup, verify the full chain works:
+
 ```bash
-# Health check
+# 1. Server health
 curl http://127.0.0.1:8300/api/health
 
-# Search via CLI
-openclaw mem0 search "test query"
+# 2. Add a test memory
+curl -X POST http://127.0.0.1:8300/api/memory/add \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Test memory: the sky is blue", "user_id": "openclaw"}'
 
-# List all memories
-openclaw mem0 list
+# 3. Search for it
+curl -X POST http://127.0.0.1:8300/api/memory/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "what color is the sky", "user_id": "openclaw", "limit": 3}'
 ```
+
+If OpenClaw plugin is loaded, you should also see `<relevant-memories>` injected into conversations automatically.
 
 ## Troubleshooting
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `Connection refused :8300` | Server not running | Start server or check launchd status: `launchctl list | grep mem0` |
-| `mem0 API error: 500` | LLM/embedding API issue | Check API keys; check proxy settings if behind firewall |
-| Search returns nothing | Threshold too strict or no matching memories | Increase `scoreThreshold` (e.g. 2.0) or check `openclaw mem0 list` |
-| Duplicate memories | Normal — mem0 may create near-duplicates | mem0 deduplicates via LLM fact extraction; near-duplicates resolve over time |
+| Symptom | Fix |
+|---------|-----|
+| `Connection refused :8300` | Start the server or check `launchctl list \| grep mem0` |
+| Search returns empty | Raise `scoreThreshold` (e.g. 2.0). Score = distance, lower = more relevant |
+| `plugin disabled (memory slot set to "memory-core")` | Set `plugins.slots.memory` to `"memory-mem0-local"` in openclaw.json |
+| `plugin disabled (not in allowlist)` | Add `"memory-mem0-local"` to `plugins.allow` array |
+| LLM/embedding timeout | Check API keys and proxy settings (`HTTP_PROXY`/`HTTPS_PROXY`) |
 
-## Important Notes
+## Key Notes
 
-- **Score = distance** (not similarity). Lower scores = more relevant. The default threshold (1.5) is permissive; tighten to 0.8–1.0 for precision.
-- **Unified user_id**: All agents share `user_id: "openclaw"`. Memories are cross-agent by design.
-- **Memory conflicts**: When mem0 detects a new fact contradicting an existing memory, it updates the existing one (LLM-driven deduplication).
-- **Data location**: ChromaDB data at `~/.openclaw/mem0-local/chroma_db/`. Back up this directory to preserve memories.
-- **Proxy**: If your network requires a proxy for DeepSeek/DashScope API calls, set `HTTP_PROXY`/`HTTPS_PROXY` in the launchd plist or environment.
+- **Score = distance** (not similarity). Lower = more relevant. Default threshold 1.5 is permissive.
+- **All agents share one memory pool** (`user_id: "openclaw"`). Cross-agent by design.
+- **Conflict handling**: mem0 uses LLM to detect duplicate/conflicting facts and merges them automatically.
+- **Backup**: Copy `~/.openclaw/mem0-local/chroma_db/` to preserve your memories.
 
-## Key Files
+---
 
-- `~/.openclaw/mem0-local/mem0_server.py` — Server source
-- `~/.openclaw/mem0-local/setup.sh` — Installation script
-- `~/.openclaw/mem0-local/ai.openclaw.mem0.plist` — launchd config
-- `~/.openclaw/mem0-local/import_openclaw_memories.py` — Bulk import script
-- `~/.openclaw/mem0-local/requirements.txt` — Python dependencies
+⭐ **Star us on GitHub**: https://github.com/dream-star-end/openclaw-plugin-mem0-local
