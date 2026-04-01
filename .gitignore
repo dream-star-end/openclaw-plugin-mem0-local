@@ -1,14 +1,7 @@
-# Node
 node_modules/
 dist/
 *.tgz
-*.tsbuildinfo
-
-# Python
-server/venv/
-server/chroma_db/
-server/__pycache__/
+venv/
+__pycache__/
 *.pyc
-
-# OS
-.DS_Store
+chroma_db/
